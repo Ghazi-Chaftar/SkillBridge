@@ -32,6 +32,13 @@ class TeachingMethod(str, enum.Enum):
     HYBRID = "hybrid"
 
 
+class Gender(str, enum.Enum):
+    """Enumeration of teaching methods."""
+
+    MALE = "male"
+    FEMALE = "female"
+
+
 class Profile(BaseEntity):
     """SQLAlchemy model representing a Profile."""
 
@@ -47,6 +54,7 @@ class Profile(BaseEntity):
     levels = Column(ARRAY(Enum(EducationLevel)), nullable=True)
     teaching_method = Column(Enum(TeachingMethod), nullable=True)
     location = Column(String, nullable=True)
+    gender = Column(Enum(Gender), nullable=False, default=Gender.MALE)
     hourly_rate = Column(String, nullable=True)
 
     currency = Column(String, nullable=False, default="TND")

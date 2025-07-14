@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ..entities.profile import EducationLevel, TeachingMethod
+from ..entities.profile import EducationLevel, Gender, TeachingMethod
 
 
 class ProfileBase(BaseModel):
@@ -28,6 +28,7 @@ class ProfileBase(BaseModel):
     levels: Optional[List[EducationLevel]] = Field(None, description="Education levels taught")
     teaching_method: Optional[TeachingMethod] = Field(None, description="Preferred teaching method")
     location: Optional[str] = Field(None, description="Teaching location")
+    gender: Gender = Field(..., description="Gender")
     hourly_rate: Optional[str] = Field(None, description="Hourly rate for teaching")
     currency: str = Field(default="TND", description="Currency for hourly rate")
 
@@ -49,6 +50,7 @@ class ProfileUpdate(BaseModel):
     levels: Optional[List[EducationLevel]] = Field(None, description="Education levels taught")
     teaching_method: Optional[TeachingMethod] = Field(None, description="Preferred teaching method")
     location: Optional[str] = Field(None, description="Teaching location")
+    gender: Optional[Gender] = Field(None, description="Gender")
     hourly_rate: Optional[str] = Field(None, description="Hourly rate for teaching")
     currency: Optional[str] = Field(None, description="Currency for hourly rate")
 

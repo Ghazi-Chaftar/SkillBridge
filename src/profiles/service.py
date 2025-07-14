@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..entities.profile import EducationLevel, Profile, TeachingMethod
+from ..entities.profile import EducationLevel, Gender, Profile, TeachingMethod
 from .model import ProfileCreate, ProfileResponse, ProfileUpdate
 
 
@@ -96,6 +96,7 @@ def get_profiles(
     level: Optional[EducationLevel] = None,
     teaching_method: Optional[TeachingMethod] = None,
     location: Optional[str] = None,
+    gender: Optional[Gender] = None,
 ) -> List[ProfileResponse]:
     """
     Get profiles with optional filtering.
@@ -108,8 +109,7 @@ def get_profiles(
         level: Filter by education level
         teaching_method: Filter by teaching method
         location: Filter by location (partial match)
-        min_experience: Minimum years of experience
-        max_rate: Maximum hourly rate
+        gender: Filter by gender
 
     Returns:
         List of profile instances
@@ -129,6 +129,9 @@ def get_profiles(
 
         if location:
             query = query.filter(Profile.location.ilike(f"%{location}%"))
+
+        if gender:
+            query = query.filter(Profile.gender == gender)
 
         profiles = query.offset(skip).limit(limit).all()
         logging.info(f"Successfully retrieved {len(profiles)} profiles with filters")
@@ -239,6 +242,7 @@ def get_profiles_count(
     level: Optional[EducationLevel] = None,
     teaching_method: Optional[TeachingMethod] = None,
     location: Optional[str] = None,
+    gender: Optional[Gender] = None,
 ) -> int:
     """
     Get total count of profiles with optional filtering.
@@ -249,6 +253,7 @@ def get_profiles_count(
         level: Filter by education level
         teaching_method: Filter by teaching method
         location: Filter by location (partial match)
+        gender: Filter by gender
 
     Returns:
         Total count of matching profiles
@@ -268,6 +273,9 @@ def get_profiles_count(
 
         if location:
             query = query.filter(Profile.location.ilike(f"%{location}%"))
+
+        if gender:
+            query = query.filter(Profile.gender == gender)
 
         count = query.count()
         logging.info(f"Successfully counted {count} profiles with filters")

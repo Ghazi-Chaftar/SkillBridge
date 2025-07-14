@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from ..auth.service import CurrentUser
 from ..database.core import DbSession
-from ..entities.profile import EducationLevel, TeachingMethod
+from ..entities.profile import EducationLevel, Gender, TeachingMethod
 from . import model, service
 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
@@ -60,6 +60,7 @@ def get_profiles(
     level: Optional[EducationLevel] = Query(None, description="Filter by education level"),
     teaching_method: Optional[TeachingMethod] = Query(None, description="Filter by teaching method"),
     location: Optional[str] = Query(None, description="Filter by location"),
+    gender: Optional[Gender] = Query(None, description="Filter by gender"),
 ):
     """Get paginated list of profiles with optional filtering."""
     profiles = service.get_profiles(
@@ -70,6 +71,7 @@ def get_profiles(
         level=level,
         teaching_method=teaching_method,
         location=location,
+        gender=gender,
     )
 
     total = service.get_profiles_count(
@@ -78,6 +80,7 @@ def get_profiles(
         level=level,
         teaching_method=teaching_method,
         location=location,
+        gender=gender,
     )
 
     return model.ProfileListResponse(
