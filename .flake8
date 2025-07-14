@@ -1,0 +1,27 @@
+[flake8]
+# Exclude some directories and files
+exclude =
+    **site-packages**
+    **virtualenv**
+    **setuptools**
+    migrations
+    __pycache__
+    env
+    .venv
+    venv
+    .env
+    .pytest_cache
+    .git/
+    */__init__.py
+max-line-length = 120
+inline-quotes = double
+multiline-quotes = double
+; # FastAPI specific settings
+; ignore = 
+;     E203  # whitespace before ':'
+;     E501  # line too long (handled by max-line-length)
+;     W503  # line break before binary operator
+; per-file-ignores =
+;     **/__init__.py:F401,F403
+;     **/models.py:E501
+;     **/schemas.py:E501
