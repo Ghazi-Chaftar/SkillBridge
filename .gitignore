@@ -1,80 +1,80 @@
-# Alembic
-alembic.ini
-alembic/versions/__pycache__/
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
+**/__pycache__/
 *.py[cod]
+**/*.py[cod]
 *$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+.pytest_cache/
+**/.pytest_cache/
 
-# Virtual Environment
+# C extensions
+*.so
+
+# Virtual environment
 venv/
-.venv/
-ENV/
 env/
+.venv/
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
 
-# IDE
-.idea/
+# IDEs / editors
 .vscode/
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-.settings
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# PyCharm
+*.iml
 
 # Logs
 *.log
-logs/
-log/
 
-# Database
+# Coverage / test reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# mypy / type checker
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# Pydantic compiled models (if you use them)
+__pydantic__/  # optional if you use pydantic compiled models
+
+# Docker
+*.pid
+*.lock
+
+# Optional: compiled frontend (if you’re serving React/Vue build)
+frontend/node_modules/
+frontend/dist/
+
+# Optional: SQLite DB files
 *.sqlite3
 *.db
 
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
+# Optional: supervisor pid file
+supervisord.pid
 
-# Jupyter Notebooks
-.ipynb_checkpoints/
 
-# OS specific
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Package specific
-__pypackages__/
-poetry.lock
-
-# Mypy
-.mypy_cache/
+# Alembic
+alembic.ini
+alembic/**/__pycache__/
+alembic/__pycache__/
+alembic/versions/__pycache__/

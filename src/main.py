@@ -19,10 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-""" 
-Only uncomment the following line if you want to create the database tables automatically.
-With Alembic migrations, this should be commented out to let Alembic handle schema changes.
-"""
+
 Base.metadata.create_all(bind=engine)
 
 
