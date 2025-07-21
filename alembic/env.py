@@ -6,6 +6,10 @@ from sqlalchemy import pool
 from alembic import context
 from src.database.core import Base
 
+# Import all your entities so they're registered with Base.metadata
+from src.entities.user import User  # noqa: F401
+from src.entities.profile import Profile  # noqa: F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

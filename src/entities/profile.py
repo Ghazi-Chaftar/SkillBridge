@@ -20,7 +20,7 @@ class EducationLevel(str, enum.Enum):
     """Enumeration of education levels."""
 
     PRIMARY = "primary"
-    SECONDARY = "secondary"
+    SECONDARY = "high school"
     UNIVERSITY = "university"
 
 
@@ -56,6 +56,7 @@ class Profile(BaseEntity):
     location = Column(String, nullable=True)
     gender = Column(Enum(Gender), nullable=False, default=Gender.MALE)
     hourly_rate = Column(String, nullable=True)
+    languages = Column(ARRAY(String), nullable=True)
 
     currency = Column(String, nullable=False, default="TND")
 

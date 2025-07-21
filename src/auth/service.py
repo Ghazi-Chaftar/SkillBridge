@@ -9,13 +9,16 @@ from uuid import UUID, uuid4
 import jwt
 from dotenv import load_dotenv
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jwt import PyJWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from src.auth.model import LoginRequest
 from src.entities.user import User
-from src.exceptions import AuthenticationError
+from src.exceptions import AuthenticationError, DuplicateEmailError, DuplicatePhoneError, InvalidCrendentialError
+from src.profiles.model import ProfileCreate
+from src.profiles.service import create_profile
 
 from .model import RegisterUserRequest, Token, TokenData
 
@@ -63,6 +66,16 @@ def verify_token(token: str) -> TokenData:
 
 def register_user(db: Session, register_user_request: RegisterUserRequest) -> None:
     try:
+        existing_user = db.query(User).filter(User.email == register_user_request.email).first()
+        if existing_user:
+            logging.warning(f"Registration attempt with existing email: {register_user_request.email}")
+            raise DuplicateEmailError(register_user_request.email)
+
+        existing_user = db.query(User).filter(User.phone_number == register_user_request.phone_number).first()
+        if existing_user:
+            logging.warning(f"Registration attempt with existing phone number: {register_user_request.phone_number}")
+            raise DuplicatePhoneError(register_user_request.phone_number)
+
         create_user_model = User(
             id=uuid4(),
             email=register_user_request.email,
@@ -73,6 +86,13 @@ def register_user(db: Session, register_user_request: RegisterUserRequest) -> No
         )
         db.add(create_user_model)
         db.commit()
+        profile_data = ProfileCreate(user_id=create_user_model.id)
+        create_profile(db, profile_data)
+
+        logging.info(f"Successfully registered user: {register_user_request.email}")
+    except DuplicateEmailError:
+        # Re-raise DuplicateEmailError
+        raise
     except Exception as e:
         logging.error(f"Failed to register user: {register_user_request.email}. Error: {str(e)}")
         raise
@@ -85,9 +105,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]) -> TokenData
 CurrentUser = Annotated[TokenData, Depends(get_current_user)]
 
 
-def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session) -> Token:
+def login_for_access_token(form_data: LoginRequest, db: Session) -> Token:
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise AuthenticationError()
+        raise InvalidCrendentialError()
     token = create_access_token(user.email, user.id, timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES)))
     return Token(access_token=token, token_type="bearer")

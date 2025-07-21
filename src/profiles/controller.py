@@ -1,57 +1,82 @@
 """This module provides profile-related routes for the application."""
 
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query
+
+from src.utils import serialize_model
 
 from ..auth.service import CurrentUser
 from ..database.core import DbSession
 from ..entities.profile import EducationLevel, Gender, TeachingMethod
+from ..utils import build_response
 from . import model, service
 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
 
-@router.post("/", response_model=model.ProfileResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/")
 def create_profile(profile_data: model.ProfileCreate, db: DbSession, current_user: CurrentUser):
     """Create a new profile for the authenticated user."""
     try:
         # Override user_id with current authenticated user
         profile_data.user_id = current_user.get_uuid()
-        return service.create_profile(db, profile_data)
+        profile = service.create_profile(db, profile_data)
+        return build_response(
+            success=True,
+            message="Profile created successfully",
+            data=serialize_model(profile),
+            status_code=201,
+        )
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/current", response_model=model.ProfileResponse)
+@router.get("/current")
 def get_current_profile(db: DbSession, current_user: CurrentUser):
     """Get the current user's profile."""
+
     profile = service.get_profile_by_user_id(db, current_user.get_uuid())
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    return profile
+        return build_response(success=False, message="Profile not found", status_code=404)
+    return build_response(
+        success=True,
+        message="Profile retrieved successfully",
+        data=serialize_model(profile),
+        status_code=200,
+    )
 
 
-@router.get("/{profile_id}", response_model=model.ProfileResponse)
+@router.get("/{profile_id}")
 def get_profile(profile_id: UUID, db: DbSession):
     """Get a profile by ID."""
     profile = service.get_profile_by_id(db, profile_id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    return profile
+        return build_response(success=False, message="Profile not found", status_code=404)
+    return build_response(
+        success=True,
+        message="Profile retrieved successfully",
+        data=serialize_model(profile),
+        status_code=200,
+    )
 
 
-@router.get("/user/{user_id}", response_model=model.ProfileResponse)
+@router.get("/user/{user_id}")
 def get_profile_by_user(user_id: UUID, db: DbSession):
     """Get a profile by user ID."""
     profile = service.get_profile_by_user_id(db, user_id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    return profile
+        return build_response(success=False, message="Profile not found", status_code=404)
+    return build_response(
+        success=True,
+        message="Profile retrieved successfully",
+        data=serialize_model(profile),
+        status_code=200,
+    )
 
 
-@router.get("/", response_model=model.ProfileListResponse)
+@router.get("/")
 def get_profiles(
     db: DbSession,
     skip: int = Query(0, ge=0, description="Number of profiles to skip"),
@@ -83,17 +108,21 @@ def get_profiles(
         gender=gender,
     )
 
-    return model.ProfileListResponse(
-        profiles=profiles,
-        total=total,
-        page=(skip // limit) + 1,
-        per_page=limit,
-        has_next=(skip + limit) < total,
-        has_prev=skip > 0,
+    profile_list_data = {
+        "profiles": [serialize_model(p) for p in profiles],
+        "total": total,
+        "page": (skip // limit) + 1,
+        "per_page": limit,
+        "has_next": (skip + limit) < total,
+        "has_prev": skip > 0,
+    }
+
+    return build_response(
+        success=True, message="Profiles retrieved successfully", data=profile_list_data, status_code=200
     )
 
 
-@router.get("/search/", response_model=List[model.ProfileResponse])
+@router.get("/search/")
 def search_profiles(
     search_term: str = Query(..., min_length=1, description="Search term"),
     db: DbSession = DbSession,
@@ -101,10 +130,16 @@ def search_profiles(
     limit: int = Query(20, ge=1, le=100, description="Number of profiles to return"),
 ):
     """Search profiles by bio, subjects, or location."""
-    return service.search_profiles(db, search_term, skip, limit)
+    profiles = service.search_profiles(db, search_term, skip, limit)
+    return build_response(
+        success=True,
+        message="Search completed successfully",
+        data=[serialize_model(p) for p in profiles],
+        status_code=200,
+    )
 
 
-@router.put("/current", response_model=model.ProfileResponse)
+@router.put("/current")
 def update_current_profile(
     profile_update: model.ProfileUpdate,
     db: DbSession,
@@ -113,16 +148,21 @@ def update_current_profile(
     """Update the current user's profile."""
     profile = service.get_profile_by_user_id(db, current_user.get_uuid())
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
     updated_profile = service.update_profile(db, profile.id, profile_update)
     if not updated_profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
-    return updated_profile
+    return build_response(
+        success=True,
+        message="Profile updated successfully",
+        data=serialize_model(updated_profile),
+        status_code=200,
+    )
 
 
-@router.put("/{profile_id}", response_model=model.ProfileResponse)
+@router.put("/{profile_id}")
 def update_profile(
     profile_id: UUID,
     profile_update: model.ProfileUpdate,
@@ -133,40 +173,49 @@ def update_profile(
     # Check if profile exists and belongs to current user
     profile = service.get_profile_by_id(db, profile_id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
     if profile.user_id != current_user.get_uuid():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this profile")
+        return build_response(success=False, message="Not authorized to update this profile", status_code=403)
 
     updated_profile = service.update_profile(db, profile_id, profile_update)
     if not updated_profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
-    return updated_profile
+    return build_response(
+        success=True,
+        message="Profile updated successfully",
+        data=serialize_model(updated_profile),
+        status_code=200,
+    )
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/")
 def delete_current_profile(db: DbSession, current_user: CurrentUser):
     """Delete the current user's profile."""
     profile = service.get_profile_by_user_id(db, current_user.get_uuid())
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
     success = service.delete_profile(db, profile.id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
+
+    return build_response(success=True, message="Profile deleted successfully", status_code=200)
 
 
-@router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{profile_id}")
 def delete_profile(profile_id: UUID, db: DbSession, current_user: CurrentUser):
     """Delete a profile by ID (only profile owner can delete)."""
     profile = service.get_profile_by_id(db, profile_id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
 
     if profile.user_id != current_user.get_uuid():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this profile")
+        return build_response(success=False, message="Not authorized to delete this profile", status_code=403)
 
     success = service.delete_profile(db, profile_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        return build_response(success=False, message="Profile not found", status_code=404)
+
+    return build_response(success=True, message="Profile deleted successfully", status_code=200)

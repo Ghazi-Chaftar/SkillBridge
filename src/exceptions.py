@@ -52,8 +52,31 @@ class InvalidPasswordError(UserError):
         super().__init__(status_code=401, detail="Current password is incorrect")
 
 
+class DuplicateEmailError(UserError):
+    """Exception raised when trying to register with an email that already exists."""
+
+    def __init__(self, email: str = None):
+        message = "Email already exists" if email is None else f"User with email {email} already exists"
+        super().__init__(status_code=409, detail=message)
+
+
 class AuthenticationError(HTTPException):
     """Exception raised for authentication failures."""
 
     def __init__(self, message: str = "Could not validate user"):
         super().__init__(status_code=401, detail=message)
+
+
+class InvalidCrendentialError(HTTPException):
+    """Exception raised for authentication failures."""
+
+    def __init__(self, message: str = "Email or password are incorrect"):
+        super().__init__(status_code=404, detail=message)
+
+
+class DuplicatePhoneError(UserError):
+    """Exception raised when trying to register with a phone number that already exists."""
+
+    def __init__(self, phone: str = None):
+        message = "Phone number already exists" if phone is None else f"User with phone number {phone} already exists"
+        super().__init__(status_code=409, detail=message)

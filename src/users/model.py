@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
+from fastapi_camelcase import CamelModel
 
 
 class UserResponse(BaseModel):
@@ -21,3 +22,11 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str
     new_password_confirm: str
+
+
+class UserUpdate(CamelModel):
+    """Data model for updating a user"""
+
+    first_name: str
+    last_name: str
+    phone_number: str

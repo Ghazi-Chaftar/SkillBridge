@@ -198,6 +198,7 @@ def update_profile(db: Session, profile_id: UUID, profile_update: ProfileUpdate)
 
         # Update only provided fields
         update_data = profile_update.model_dump(exclude_unset=True)
+        print(update_data)
         for field, value in update_data.items():
             setattr(db_profile, field, value)
 

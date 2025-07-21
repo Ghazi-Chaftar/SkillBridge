@@ -9,6 +9,7 @@ This module defines Pydantic models for Profile-related operations:
 """
 
 from datetime import datetime
+from fastapi_camelcase import CamelModel
 from typing import List, Optional
 from uuid import UUID
 
@@ -20,7 +21,7 @@ from ..entities.profile import EducationLevel, Gender, TeachingMethod
 class ProfileBase(BaseModel):
     """Base Profile model with common fields."""
 
-    bio: str = Field(..., min_length=1, max_length=1000, description="Profile biography")
+    bio: str = Field(min_length=1, max_length=1000, description="Profile biography", default="this is my bio")
     profile_picture: Optional[str] = Field(None, description="URL to profile picture")
     degrees: Optional[List[str]] = Field(None, description="List of academic degrees")
     years_of_experience: Optional[str] = Field(None, description="Years of teaching experience")
@@ -28,9 +29,10 @@ class ProfileBase(BaseModel):
     levels: Optional[List[EducationLevel]] = Field(None, description="Education levels taught")
     teaching_method: Optional[TeachingMethod] = Field(None, description="Preferred teaching method")
     location: Optional[str] = Field(None, description="Teaching location")
-    gender: Gender = Field(..., description="Gender")
+    gender: Gender = Field(description="Gender", default=Gender.MALE)
     hourly_rate: Optional[str] = Field(None, description="Hourly rate for teaching")
     currency: str = Field(default="TND", description="Currency for hourly rate")
+    languages: Optional[List[str]] = Field(None, description="List of languages spoken")
 
 
 class ProfileCreate(ProfileBase):
@@ -39,7 +41,7 @@ class ProfileCreate(ProfileBase):
     user_id: UUID = Field(..., description="ID of the user this profile belongs to")
 
 
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(CamelModel):
     """Model for updating an existing profile."""
 
     bio: Optional[str] = Field(None, min_length=1, max_length=1000, description="Profile biography")
@@ -53,6 +55,7 @@ class ProfileUpdate(BaseModel):
     gender: Optional[Gender] = Field(None, description="Gender")
     hourly_rate: Optional[str] = Field(None, description="Hourly rate for teaching")
     currency: Optional[str] = Field(None, description="Currency for hourly rate")
+    languages: Optional[List[str]] = Field(None, description="List of languages spoken")
 
 
 class ProfileResponse(ProfileBase):

@@ -3,8 +3,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.database.core import Base, engine
-
 from .api import register_routes
 from .logging import LogLevels, configure_logging
 
@@ -20,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 
 register_routes(app)
