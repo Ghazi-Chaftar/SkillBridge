@@ -1,9 +1,11 @@
 """Service module for profile-related operations."""
 
 import logging
+from pathlib import Path
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -198,7 +200,7 @@ def update_profile(db: Session, profile_id: UUID, profile_update: ProfileUpdate)
 
         # Update only provided fields
         update_data = profile_update.model_dump(exclude_unset=True)
-        print(update_data)
+        logging.debug(f"Update data for profile {profile_id}: {update_data}")
         for field, value in update_data.items():
             setattr(db_profile, field, value)
 
@@ -284,3 +286,76 @@ def get_profiles_count(
     except Exception as e:
         logging.error(f"Error counting profiles with filters. Error: {str(e)}")
         raise
+
+
+def upload_profile_picture(db: Session, user_id: UUID, file: UploadFile) -> dict:
+    """
+    Upload and save a profile picture for a user.
+
+    Args:
+        db: Database session
+        user_id: User ID to update profile picture for
+        file: Uploaded file
+
+    Returns:
+        Dictionary with success message and file path
+
+    Raises:
+        HTTPException: If file type is invalid or profile not found
+    """
+    try:
+        allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+        file_ext = Path(file.filename).suffix.lower() if file.filename else ""
+
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+            )
+
+        # Validate file size (5MB max)
+        max_file_size = 5 * 1024 * 1024  # 5MB in bytes
+        file.file.seek(0, 2)  # Seek to end of file
+        file_size = file.file.tell()  # Get file size
+        file.file.seek(0)  # Reset file pointer
+
+        if file_size > max_file_size:
+            raise HTTPException(status_code=400, detail="File size too large. Maximum size is 5MB.")
+
+        # Get the user's profile
+        profile = get_profile_by_user_id(db, user_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        # Create directory if it doesn't exist
+        upload_dir = Path("static/profile_pictures")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate unique filename to avoid conflicts
+        unique_filename = f"{uuid4()}{file_ext}"
+        file_path = upload_dir / unique_filename
+
+        # Save file
+        with open(file_path, "wb") as buffer:
+            # Read file content synchronously
+            content = file.file.read()
+            buffer.write(content)
+
+        # Update profile in database
+        profile.profile_picture = str(file_path)
+        db.commit()
+        db.refresh(profile)
+
+        logging.info(f"Successfully uploaded profile picture for user ID: {user_id}")
+
+        return {
+            "message": "Profile picture uploaded successfully",
+            "file_path": str(file_path),
+            "filename": unique_filename,
+        }
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logging.error(f"Error uploading profile picture for user ID: {user_id}. Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to upload profile picture")

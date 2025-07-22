@@ -3,7 +3,7 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, Request
 
 from src.utils import serialize_model
 
@@ -219,3 +219,23 @@ def delete_profile(profile_id: UUID, db: DbSession, current_user: CurrentUser):
         return build_response(success=False, message="Profile not found", status_code=404)
 
     return build_response(success=True, message="Profile deleted successfully", status_code=200)
+
+
+@router.post("/upload-picture")
+async def upload_profile_picture(
+    request: Request, db: DbSession, current_user: CurrentUser, file: UploadFile = File(...)
+):
+    """Upload a profile picture for the current user."""
+    try:
+        result = service.upload_profile_picture(db, current_user.get_uuid(), file)
+
+        return build_response(
+            success=True,
+            message=result["message"],
+            data={"file_path": result["file_path"], "filename": result["filename"]},
+            status_code=200,
+        )
+    except HTTPException as e:
+        return build_response(success=False, message=e.detail, status_code=e.status_code)
+    except Exception:
+        return build_response(success=False, message="Failed to upload profile picture", status_code=500)
